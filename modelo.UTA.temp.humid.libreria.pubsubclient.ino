@@ -57,6 +57,7 @@
 #define MOBIL          // Conectado coa rede: CASA ou MOBIL (outras, definir abaixo)
 
 // Módulo da UTA que controla o ESP8266 específico
+// Uso: Descomentar a liña que corresponda para habilitar o módulo da UTA
 #define MOD_RECUPERADOR
 //#define MOD_BATERIA_FRIO_CALOR
 //#define MOD_VENTILADOR_IMPUL
