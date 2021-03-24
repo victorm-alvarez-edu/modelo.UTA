@@ -1,19 +1,62 @@
 /*
+ * Script para xestionar as mensaxes entre un servidor MQTT e os sensores e 
+ * actuadores dos diferentes módulos dun modelo didáctico de UTA.
  * 
+ * A UTA consta de dos seguintes módulos, seguindo o esquema adxunto:
+ *   * Recuperador (sensores DHT)
+ *   * Batería de frío/calor (intercambiadores de calor)
+ *   * Ventilador de impulsión (relé de activación do motor)
+ *   * Ventilador de retorno (relé de activación do motor)
+ *   * Comportas de aire expulsión e de mestura (servos de apertura/peche)
+ *   * Comporta de aire de renovación (servo de apertura/peche)
+ * cada módulo consta dun ou varios sensores e actuadores que se coordinan mediante 
+ * a lóxica programada nun servidor Node-Red aloxado nunha RaspberryPi adxunta á UTA.
+ * Para coordenar sensores e actuadores, o servidor Node-Red fai uso dos canais de
+ * comunicación dados de alta nun servidor MQTT (Mosquitto) aloxado no mesmo computador.
+ * 
+ * Este script proporciona as definicións e a lóxica necesaria para que cada módulo
+ * de maneira independente poida dar de alta (subscribe) os seus propios sensores e
+ * actuadores nos canais MQTT nos que estará 'escoitando' e publicando o servidor 
+ * Node-Red. O control local de cada grupo de sensores e actuadores lévase a cabo 
+ * mediante unha placa ESP8266 na versión Wemos D1, á que irán conectados fisicamente 
+ * tanto os sensores como os actuadores. A conexión ao servidor MQTT faise mediante 
+ * a tarxeta WiFi do ESP8266, a través da rede local proporcionada pola tarxeta de rede
+ * da RaspberryPi.
+ * 
+ * Os sensores empregados son da familia DHT (DHT11 ou DHT22), a fin de recoller datos 
+ * dos valores de temperatura e humidade relativa do aire no módulo correspondente ou ben
+ * á entrada (IN) e máis á saída (OUT) do mesmo. Os actuadores son motores sen 
+ * regulación de velocidade que se activan e desactiva (ON/OFF) mediante relés 
+ * controlados polo ESP8266 do módulo correspondente. Tamén son actuadores os servomotores
+ * que se encargan de regular a apertura das comportas de admisión, expulsión e mestura
+ * de aire.
+ * 
+ * Para programar cada ESP8266 de cada módulo específico é necesario descomentar (quitar
+ * as marcas '//') á liña correspondente ao módulo e que empeza por '#define MOD_XXXX'.
+ * Débense manter as outras liñas comentadas, a fin de que non existan interferencias 
+ * entre a definición de pins e variables no mesmo espazo de nomes. Despois de 
+ * descomentar e comprobar que as outras están comentadas, basta compilar e cargar
+ * na memoria do ESP8266. Convén revisar que sensores/actuadores están dados de alta
+ * no módulo e asegurarse que van conectados ao pin correcto. É recomendable alimentar
+ * tanto sensores como actuadores (sobre todos os actuadores) cunha fonte de alimentación
+ * independente do ESP8266, xa que este só pode aportar unha pequena potencia. Convén 
+ * recordar que o neutro ('-' ou 'GND') ten que ser común a sensores/actuadores e
+ * ESP8266.
 */
 
-#include "DHT.h"
-#include <Servo.h>
-#include <ESP8266WiFi.h>
-#include <PubSubClient.h>
+
+// Declaración de librerías
+#include "DHT.h"            // Facilita a lectura de datos dos sensores da familia DHT
+#include <Servo.h>          // Facilita o control dos sevomotores
+#include <ESP8266WiFi.h>    // Encapsula o protocolo de conexión á WiFi do ESP8266 
+#include <PubSubClient.h>   // Encapsula o protocolo de conexión ao servidor MQTT
 
 // Definicións de macros para probas
 //#define NOSENSOR     // Probas sen sensor, con resultados aleatorios
 #define SENSORDHT11    // SENSORDHT22 ou SENSORDHT21
-//#define MOBIL        // Conectado coa rede: CASA ou MOBIL (outras, definir abaixo)
-#define CASA
+#define MOBIL          // Conectado coa rede: CASA ou MOBIL (outras, definir abaixo)
 
-// Tipo de módulo que sensoriza o ESP8266
+// Módulo da UTA que controla o ESP8266 específico
 #define MOD_RECUPERADOR
 //#define MOD_BATERIA_FRIO_CALOR
 //#define MOD_VENTILADOR_IMPUL
@@ -21,15 +64,26 @@
 //#define MOD_COMPORTA_EXP_MEST
 //#define MOD_COMPORTA_RENOV
 
-// Tipo do sensor DHT
+// Tipo do sensor da familia DHT que se vai empregar no módulo específico
 #if defined(SENSORDHT11)
-  #define DHTTYPE DHT11   // DHT 11
+  #define DHTTYPE DHT11   // DHT11
 #elif defined(SENSORDHT22)
-  #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+  #define DHTTYPE DHT22   // DHT22  (AM2302), AM2321
 #elif defined(SENSORDHT21)
-  #define DHTTYPE DHT21   // DHT 21 (AM2301)
+  #define DHTTYPE DHT21   // DHT21 (AM2301)
 #endif 
 
+
+/* =================================================================================
+ *     Definicións específicas de cada módulo:
+ *       * canais de comunicación
+ *       * tipo de sensor/actuador e pin de conexión
+ *       * declaración do obxecto que describe o sensor/actuador
+ *       * nome no módulo UTA no Node-Red
+ *       
+ *     NON é necesario descomentar nada, só nas primeiras liñas
+ * =================================================================================
+ */
 // ===== Definicións para o módulo recuperador
 // Este módulo conta con tres sensores DHT: 
 //     (a) na entrada de renovación (DHT01)
@@ -118,6 +172,10 @@
   #define MQTT_NOME_CLIENTE "Modulo comporta renovación"
 #endif
 
+/* =================================================================================
+ *     Definicións das redes que se poden usar cao RaspberryPi
+ * =================================================================================
+ */
 // --------- Definicións para as redes de exemplo
 #if defined(CASA)
   #define WIFI_SSID "MOVISTAR_D45F"
@@ -133,18 +191,26 @@
 
 #define MQTT_PORT 1883
 
-// Variables para gardar as lecturas
-float temp = -99.;
-float humid = -99.;
-
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 
+/* =================================================================================
+ *     Definicións das variables globais accesibles para todas as funcións
+ * =================================================================================
+ */
 unsigned long previousMillis = 0;   // Último momento que se publicou unha leitura
 const long interval = 25 * 1000;    // Intervalo entre leituras
 int tMin = 200, tMax = 250;          // Intevalo de tempos aleatorios de leitura (x10)
 
-// Función para conectar á WiFi
+// Variables para gardar as lecturas de temp/humid
+float temp = -99.;
+float humid = -99.;
+
+/* =================================================================================
+ *     Conexión á WiFi definida máis arriba
+ *     Indica por saída serie o estado de conexión/espera, así como a IP local
+ * =================================================================================
+ */
 void setup_wifi() {
   delay(10);
   Serial.println();
@@ -158,9 +224,19 @@ void setup_wifi() {
   Serial.print("WiFi conectada - ESP8266 IP: "); Serial.println(WiFi.localIP());
 }
 
-// Función callback. Execútase cada vez que un dispositivo publica unha mensaxe 
-// nun topic ao que o ESP está suscrito.
-// Múdase este código segundo sexa necesario, para engadir lóxica ao programa.
+/* =================================================================================
+ *     Definición da función callback local
+ *     É chamada polo método callback do obxecto que describe á conexión MQTT, cada
+ *     vez que un dispositivo publica unha mensaxe nun canal (topic) ao que está
+ *     suscrito este ESP8266.
+ *     
+ *     Nesta función vai ademais a lóxica que fai accionar os actuadores conforme
+ *     a mensaxe que reciban no topic ao que estean suscritos. Engadir novos 
+ *     actuadores implica engadir nova lóxica a esta función.
+ *     
+ *     Os sensores publican desde a función 'loop()', non desde esta función.
+ * =================================================================================
+ */
 void callback(String topic, byte* message, unsigned int len) {
   Serial.print("Nova mensaxe no topic: "); Serial.print(topic);
   Serial.print(". Mensaxe: ");
@@ -172,6 +248,8 @@ void callback(String topic, byte* message, unsigned int len) {
   Serial.println();
 
   // Engadir a lóxica que sexa precisa para cada script
+  // Se está dada de alta un determinado módulo ('#ifdef MOD_XXXX'), chámase á
+  // función que controla a actuación (definida na sección posterior ao 'loop()'
   #ifdef MOD_VENTILADOR_IMPUL
   modVentiladorImpulsion(topic, mensaxeTmp);
   #endif
@@ -186,7 +264,20 @@ void callback(String topic, byte* message, unsigned int len) {
   #endif
 }
 
-// Reconexión do ESP ao servidor MQTT
+/* =================================================================================
+ *     Definición da función reconnect local (método do obxecto 'mqttClient')
+ *     Cada vez que se inicia unha nova iteracción do 'loop()', compróbase que 
+ *     existe conexión ao servidor MQTT. Se non é así, chámase a esta función.
+ *     
+ *     Encárgase de:
+ *       * conectar ao servidor MQTT
+ *       * comunicar por saída serie o estado da conexión MQTT
+ *       * suscribir os sensores/actuadores declarados no topic correspondent
+ *     
+ *     Ao engadir novos módulos á UTA, é importante redefinir este método para 
+ *     engadir os topics necesarios.
+ * =================================================================================
+ */
 void reconnect() {
   // Mentres non se reconecta ao servidor MQTT
   while(!espClient.connected()) {
@@ -234,6 +325,20 @@ void reconnect() {
   }
 }
 
+/* =================================================================================
+ *     Método 'setup()'
+ *     Fanse as declaracións iniciais de:
+ *       * veloc. de conexión coa saída serie (baudios)
+ *       * declaración dos pins dixitais e PWM (INPUT/OUTPUD), ademais de
+ *       * iniciar os obxectos declarados máis arriba
+ *       * iniciar a conexión WiFi chamando á función 'setup_wifi()'
+ *       * iniciar a conexión ao servidor MQTT e
+ *       * asignar a función 'callback()' local que vai ser chamada polo método
+ *         do mesmo nome
+ *       * iniciar a semente de aleatoriedada para saídas de probas sen conexión
+ *         a sensores físicos.
+ * =================================================================================
+ */
 void setup() {
   Serial.begin(115200);
   Serial.println();
@@ -262,7 +367,6 @@ void setup() {
   #ifdef MOD_COMPORTA_RENOV
   servo01.attach(SERVO01PIN);
   #endif
-//  dht.begin(); // Inicia o obxecto DHT
 
   setup_wifi();
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
@@ -271,6 +375,17 @@ void setup() {
   randomSeed(314);
 }
 
+/* =================================================================================
+ *     Método 'loop()'
+ *     Compróbase o estado de conexión do servidor MQTT, cada intervalo de tempo 
+ *     determinado (valor de 'deltaT') execútase o código incluído.
+ *     
+ *     O código que se executa é basicamente unha función que lé os valores dun
+ *     sensor e publica os mesmos nos topics correspondentes. Estas funcións
+ *     habilítanse ou non segundo estea declarado o módulo correspondente na 
+ *     cabeceira do script (liñas '#define MOD_XXXX')
+ * =================================================================================
+ */
 void loop() {
   if(!mqttClient.connected()) {
     reconnect();
@@ -312,6 +427,24 @@ void loop() {
   }
 }
 
+/* =================================================================================
+ *     Definicións das funcións que se van empregar no método 'reconnect()' ou na
+ *     función 'loop()' para recoller mensaxes dun topic e actuar ou ben publicar 
+ *     mensaxes nun topic, respectivamente.
+ *     
+ *     Coidado cos módulos da UTA que inclúen polo menos un sensor e máis un 
+ *     actuador: neses casos temos que definir dúas funcións, unha que irá no 
+ *     método 'reconnect()' e outra que debe ir no 'loop()'
+ *     
+ *     Estas definicións de función entran no compilador só no caso de que estea
+ *     declarada a directiva correspondente entre as sentenzas do preprocesador
+ *     (liñas que empezan por '#define MOD_XXXX'). Coidado se temos varias liñas
+ *     da cabeceira descomentadas, porque poden dar problemas de interferencia de
+ *     declaracións no mesmo espazo de nomes.
+ * =================================================================================
+ */
+
+ /* ===== MOD_RECUPERADOR ===== */
 // Función para a lectura e publicación do sensores do módulo recuperador
 #ifdef MOD_RECUPERADOR
 void modRecuperador() {
@@ -363,6 +496,7 @@ void modRecuperador() {
 }
 #endif
 
+ /* ===== MOD_BATERIA_FRIO_CALOR ===== */
 // Función para a lectura e publicación do sensores da batería frío/calor
 #ifdef MOD_BATERIA_FRIO_CALOR
 void modBateriaFrioCalor() {
@@ -399,6 +533,7 @@ void modBateriaFrioCalor() {
 }
 #endif
 
+ /* ===== MOD_VENTILADOR_IMPUL ===== */
 // Función para a activación dos relés do módulo de impulsión
 #ifdef MOD_VENTILADOR_IMPUL
 void modVentiladorImpulsion(String topic, String mensaxeTmp) {
@@ -427,6 +562,7 @@ void modVentiladorImpulsion(String topic, String mensaxeTmp) {
 }
 #endif
 
+ /* ===== MOD_VENTILADOR_RETORN ===== */
 // Función para a activación do relé do módulo de retorno
 #ifdef MOD_VENTILADOR_RETORN
 //Esta función é para obter ordes para o actuador
@@ -466,6 +602,7 @@ void modVentiladorRetorno() {
 }
 #endif
 
+ /* ===== MOD_COMPORTA_EXP_MEST ===== */
 #ifdef MOD_COMPORTA_EXP_MEST
 // Esta función é para obter ordes para regular as 
 // comportas de expulsión e mestura
@@ -483,6 +620,7 @@ void modComportaExpulsionMestura(String topic, String mensaxe) {
 }
 #endif
 
+ /* ===== MOD_COMPORTA_RENOV ===== */
 #ifdef MOD_COMPORTA_RENOV
 // Esta función é para obter ordes para regular a comporta de renovación
 void modComportaRenovacion(String topic, String mensaxe) {
