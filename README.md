@@ -46,7 +46,7 @@ O script global está dispoñible no repositorio a través desta URL: https://gi
 <img width="720" alt="Probas modulo recuperador" src="https://user-images.githubusercontent.com/26594148/112761173-4361a200-8ffa-11eb-8692-39779902bacf.jpeg">
 
 
-Probas do módulo recuperador, onde se observan os tres sensores DHT11 (temperatura e humidade), así como o ESP8266, montados nunha placa de probas. O da esquerda e outro ESP8266 configurado para un dos módulos de comportas.
+Probas do módulo recuperador, onde se observan os tres sensores DHT11 (temperatura e humidade relativa), así como o ESP8266, montados nunha placa de probas. O da esquerda e outro ESP8266 configurado para un dos módulos de comportas.
 
 ### Preparación da RaspberryPi
 Para configurar a RaspberryPi como UC do modelo de UTA, preparamos unha tarxeta microSD coa última actualización do SO Raspbian, na maneira habitual:
@@ -66,24 +66,42 @@ Desta maneira, o servidor arranca en cada novo encendido da RaspberryPi e 'escoi
 <img width="720" alt="Servidor NodeRed" src="https://user-images.githubusercontent.com/26594148/112761902-b6b8e300-8ffd-11eb-9316-d7e135192bda.png">
 
 ### Uso manual do modelo didáctico da UTA, a través dun dispositivo móbil
-Tal como queda configurado o sistema, podese interaccionar coa UC (RaspberryPi) mediante calquera dispositivo móbil que se conecte ao dashboard do servidor Node-Red aloxado na mesma. Na imaxe a seguir obsérvase un dos módulos en probas mentres se mostran os resultados de medición de temperaturas e humidade no monitor do portátil ao fondo.
+Tal como queda configurado o sistema, podese interaccionar coa UC (RaspberryPi) mediante calquera dispositivo móbil que se conecte ao dashboard do servidor Node-Red aloxado na mesma. Na imaxe a seguir obsérvase un dos módulos en probas mentres se mostran os resultados de medición de temperaturas e humidade relativa no monitor do portátil ao fondo.
 
 <img width="720" alt="Probas dashboard" src="https://user-images.githubusercontent.com/26594148/112762137-7d34a780-8ffe-11eb-9a91-c0173983734c.jpeg">
 
 Para conectarse ao dashboard da RaspberryPi é preciso usar a URL: 'localhost:1880/ui' ou ben sustituír 'localhost' pola IP da RaspberryPi no caso de conectarnos cun dispositivo externo (p.ex. unha tableta ou un móbil). Aparecerá unha pantalla interactiva donde podemos seleccionar os diferentes módulos da UTA a través do panel vertical da esquerda. Para visualizalo, débese premer no nome do módulo (esquina superior esquerda).
 
+<img width="720" alt="Menu lateral" src="https://user-images.githubusercontent.com/26594148/112768782-fd1e3a00-901d-11eb-9af2-141847febf28.png">
+
+
 #### Módulo recuperador
+O módulo recuperador encárgase de facilitar o intercambio de enerxía entre o aire entrante do exterior e o aire que vai ser expulsado. Desta maneira recupérase parte da enerxía invertida en axeitar as condicións do aire que se impulsou ao interior do edificio, cos conseguintes aforros enerxéticos e a mellora da eficiencia enerxética da instalación. Este módulo inclúe tres sensores de temperatura e humidade relativa (DHT11), que envían valores cada ~20 segundos á UC, tanto para mostrar a información no dashboard de Node-Red, como para monitorizar o sistema en modo automático. Os triángulos na esquina superior dereita de cada widget permiten colapsar o elemento, a fin de ver os gráficos en dispositivos con pantalla pequena.
+
+<img width="720" alt="Modulo recuperador" src="https://user-images.githubusercontent.com/26594148/112768960-e6c4ae00-901e-11eb-91d2-8e10fa80a88e.png">
+
 
 #### Módulo batería frío/calor
+A batería frío/calor encárgase de axeitar as condicións de temperatura do aire antes de ser impulsado ao interior do edificio. Por tanto este módulo inclúe dous sensores de temperatura e humidade relativa, un para a entrada de aire nesta sección da UTA e outro para medir as mesmmas magnitudes á saída, unha vez que recibe tratamento da batería propiamente dita. O tratamento de temperatura faise mediante un módulo Peltier accionado por catro motores.
+
+<img width="360" alt="Modulo bateria frio calor" src="https://user-images.githubusercontent.com/26594148/112770238-090dfa00-9026-11eb-9502-8b4054aa62ab.png">
+
 
 #### Módulo ventilador retorno
+O módulo do ventilador de retorno dispón dun conmutador ON/OFF (switch) que activa ou desactiva o ventilador que empuxa o aire que retorna ao exterior. Intégrase ademais neste módulo un sensor DHT11 para monitorizar a temperatura e humidade relativa do aire extraído do interior do edificio antes de pasar polo módulo recuperador e ser expulsado ao exterior.
+
+<img width="360" alt="Modulo ventilador retorno ON" src="https://user-images.githubusercontent.com/26594148/112770761-7e7aca00-9028-11eb-8872-b9573dfe28d0.png">|<img width="360" alt="Modulo ventilador retorno OFF" src="https://user-images.githubusercontent.com/26594148/112770763-7f136080-9028-11eb-8921-24897e617447.png">
 
 #### Módulo ventilador impulsión
+O módulo do ventilador de impulsión dispón dun conmutador ON/OFF (switch) para activar o ventilador que empuxa o aire ao interior do edificio. Dispón ademais doutro switch que activa ou desactiva a humectación por inxección de vapor.
+
+<img width="360" alt="Modulo ventilador impulsion OFF" src="https://user-images.githubusercontent.com/26594148/112769413-1f658700-9021-11eb-9cff-e85d871f50f2.png">|<img width="360" alt="Modulo ventilador impusion ON" src="https://user-images.githubusercontent.com/26594148/112769408-1c6a9680-9021-11eb-829f-826d1601e35a.png">
+
 
 #### Módulo comportas regulación
+As comportas de regulación están unificadas nun único panel, aínda que fisicamente ocupan dous módulos diferentes da UTA. Desta maneira pódese regular manualmente no mesmo panel, cada un dos servomotores que controla o grao de apertura das follas.
 
-
-
+<img width="360" alt="Modulo comportas regulacion OFF" src="https://user-images.githubusercontent.com/26594148/112769487-9438c100-9021-11eb-9e2b-65ab8dbcf559.png">|<img width="360" alt="Modulo comportas regulacion a medias" src="https://user-images.githubusercontent.com/26594148/112769486-93079400-9021-11eb-8247-85a6b92c8b72.png">
 
 
 
