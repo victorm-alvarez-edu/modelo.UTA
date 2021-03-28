@@ -43,7 +43,7 @@ Cada módulo independente precisa ser alimentado, a fin de que os ESP8266 e sens
 Como se mencionou máis arriba, o control lévase a cabo mediante unha RaspberryPi (https://www.raspberrypi.org/products/raspberry-pi-3-model-b/) que actúa como UC e que se comunica por WiFi con varias tarxetas ESP8266 (https://www.wemos.cc/en/latest/) (unha por módulo funcional da UTA). Cada un dos ESP8266 vai conectado fisicamente a un ou varios sensores/actuadores e encárgase de recoller a información dos mesmos (sensores) ou transmitir as ordes (actuadores). A programación de cada ESP8266 é en principio diferente, atendendo aos sensores ou actuadores en cada módulo particular. Aínda que inicialmente se prantexou programar cada ESP8266 de cada módulo por separado, valoráronse as vantaxes de unificar todos os scripts nun só e finalmente así se fixo. Desta maneira facilítase o posterior mantemento do script en termos de futuras melloras, inclusión de novos módulos ou mesmo modificacións internas dos módulos existentes da UTA.
 O script global está dispoñible no repositorio a través desta URL: https://github.com/victorm-alvarez-edu/modelo.UTA/blob/main/modelo.UTA.todos.modulos.funcionais.ino
 
-![Probas modulo recuperador](https://user-images.githubusercontent.com/26594148/112761173-4361a200-8ffa-11eb-8692-39779902bacf.jpeg)
+<img width="720" alt="Probas modulo recuperador" src="https://user-images.githubusercontent.com/26594148/112761173-4361a200-8ffa-11eb-8692-39779902bacf.jpeg">
 
 
 Probas do módulo recuperador, onde se observan os tres sensores DHT11 (temperatura e humidade), así como o ESP8266, montados nunha placa de probas. O da esquerda e outro ESP8266 configurado para un dos módulos de comportas.
