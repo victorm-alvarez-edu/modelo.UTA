@@ -34,7 +34,8 @@ En resume, o modelo didático de UTA consta dos seguintes módulos e sensores/ac
 
 Cada módulo independente precisa ser alimentado, a fin de que os ESP8266 e sensores/actuadores se inicien e continúen funcionando. A alimentación é común a todos os módulos e internamente tanto sensores/actuadores como ESP8266 aliméntanse en paralelo da mesma fonte. É recomendable que todos os sensores/actuadores reciban alimentación independente da que pode pode proporcionar o ESP8266, xa que os consumos de relés e servomotores van máis alá do que pode aportar esta placa. Aínda que os ESP8266 poden alimentar varios sensores da familia DHT, recoméndase igualmente alimentalos por separado e só conectar o pin de datos tanto para sensores como para actuadores.
 
-## Desenvolvemento informático do control do modelo didáctivo de UTA.
+## Desenvolvemento informático do control do modelo didáctico de UTA.
+# Scripts
 Como se mencionou máis arriba, o control lévase a cabo mediante unha RaspberryPi (https://www.raspberrypi.org/products/raspberry-pi-3-model-b/) que actúa como UC e que se comunica por WiFi con varias tarxetas ESP8266 (https://www.wemos.cc/en/latest/) (unha por módulo funcional da UTA). Cada un dos ESP8266 vai conectado fisicamente a un ou varios sensores/actuadores e encárgase de recoller a información dos mesmos (sensores) ou transmitir as ordes (actuadores). A programación de cada ESP8266 é en principio diferente, atendendo aos sensores ou actuadores en cada módulo particular. Aínda que inicialmente se prantexou programar cada ESP8266 de cada módulo por separado, valoráronse as vantaxes de unificar todos os scripts nun só e finalmente así se fixo. Desta maneira facilítase o posterior mantemento do script en termos de futuras melloras, inclusión de novos módulos ou mesmo modificacións internas dos módulos existentes da UTA.
 
 
