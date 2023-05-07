@@ -46,7 +46,7 @@
 
 
 // Declaración de librerías
-#include "DHT.h"            // Facilita a lectura de datos dos sensores da familia DHT
+#include <DHT.h>            // Facilita a lectura de datos dos sensores da familia DHT
 #include <Servo.h>          // Facilita o control dos sevomotores
 #include <ESP8266WiFi.h>    // Encapsula o protocolo de conexión á WiFi do ESP8266 
 #include <PubSubClient.h>   // Encapsula o protocolo de conexión ao servidor MQTT
