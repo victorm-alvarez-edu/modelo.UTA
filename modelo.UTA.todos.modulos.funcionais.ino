@@ -179,13 +179,13 @@
  */
 // --------- Definicións para as redes de exemplo
 #if defined(CASA)
-  #define WIFI_SSID "MOVISTAR_D45F"
-  #define WIFI_PASSWORD "ljVWunxFFphbB4dkNPvj"
+  #define WIFI_SSID ""
+  #define WIFI_PASSWORD ""
   // Raspberri Pi Mosquitto MQTT Broker
   #define MQTT_HOST IPAddress(192, 168, 1, 91)
 #elif defined(MOBIL)
-  #define WIFI_SSID "Arturitu"
-  #define WIFI_PASSWORD "Ce3pe0;;"
+  #define WIFI_SSID "RaspiWiFi"
+  #define WIFI_PASSWORD "P4ssw0rd;;"
   // Raspberri Pi Mosquitto MQTT Broker
   #define MQTT_HOST IPAddress(192, 168, 43, 91)
 #endif
